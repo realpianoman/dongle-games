@@ -28,12 +28,13 @@ void loop() {
     lastFrame += constants::TARGET_FRAME_TIME;
     frame++;
 
-    manager.update(frame);
+    if (frame > constants::TARGET_FPS)
+        manager.update(frame - constants::TARGET_FPS);
 
     frameCount++;
 
     if (now - fpsTimer >= 1000) {
-        // Serial.printf("FPS: %lu\n", frameCount);
+        Serial.printf("FPS: %lu\n", frameCount);
 
         frameCount = 0;
         fpsTimer = now;

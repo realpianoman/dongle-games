@@ -16,6 +16,10 @@ void Display::setup() {
 void Display::fillScreen(uint16_t color) { tft.fillScreen(color); }
 
 void Display::drawRect(int x, int y, int w, int h, uint16_t color) {
+    tft.drawRect(x, y, w, h, color);
+}
+
+void Display::fillRect(int x, int y, int w, int h, uint16_t color) {
     tft.fillRect(x, y, w, h, color);
 }
 
