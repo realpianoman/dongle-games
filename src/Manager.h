@@ -12,6 +12,8 @@ class Manager {
     void update(int frame);
 
   private:
+    void reset();
+
     void drawCell(int r, int c, bool on);
     bool getCell(int r, int c);
     int countNeighbors(int r, int c);

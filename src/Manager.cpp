@@ -10,15 +10,18 @@ void Manager::setup() {
     display.setup();
 
     display.fillScreen(TFT_BLACK);
+    reset();
 
+    delay(1000);
+}
+
+void Manager::reset() {
     for (int r = 0; r < constants::ROWS; r++) {
         for (int c = 0; c < constants::COLS; c++) {
             grid[r][c] = random(5) == 0;
             drawCell(r, c, grid[r][c]);
         }
     }
-
-    delay(1000);
 }
 
 void Manager::drawCell(int r, int c, bool on) {
@@ -37,7 +40,10 @@ int Manager::countNeighbors(int r, int c) {
             if (dr == 0 && dc == 0)
                 continue;
 
-            if (grid[(r + dr) % constants::ROWS][(c + dc) % constants::COLS])
+            int nr = (r + dr + constants::ROWS) % constants::ROWS;
+            int nc = (c + dc + constants::COLS) % constants::COLS;
+
+            if (grid[nr][nc])
                 count++;
         }
     }
@@ -74,4 +80,9 @@ void Manager::updateGrid() {
     }
 }
 
-void Manager::update(int frame) { updateGrid(); }
+void Manager::update(int frame) {
+    updateGrid();
+
+    if (frame % (25 * constants::TARGET_FPS) == 0)
+        reset();
+}
