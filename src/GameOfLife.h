@@ -2,11 +2,11 @@
 #include "Display.h"
 #include "constants.h"
 
-class Manager;
+class GameOfLife;
 
-class Manager {
+class GameOfLife {
   public:
-    Manager();
+    GameOfLife();
 
     void setup();
     void update(int frame);

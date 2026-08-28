@@ -1,12 +1,12 @@
-#include "Manager.h"
+#include "GameOfLife.h"
 #include "Arduino.h"
 #include "Display.h"
 #include "TFT_eSPI.h"
 #include "constants.h"
 
-Manager::Manager() {}
+GameOfLife::GameOfLife() {}
 
-void Manager::setup() {
+void GameOfLife::setup() {
     display.setup();
 
     display.fillScreen(TFT_BLACK);
@@ -15,7 +15,7 @@ void Manager::setup() {
     delay(1000);
 }
 
-void Manager::reset() {
+void GameOfLife::reset() {
     for (int r = 0; r < constants::ROWS; r++) {
         for (int c = 0; c < constants::COLS; c++) {
             grid[r][c] = random(5) == 0;
@@ -24,7 +24,7 @@ void Manager::reset() {
     }
 }
 
-void Manager::drawCell(int r, int c, bool on) {
+void GameOfLife::drawCell(int r, int c, bool on) {
     int x = constants::CELL_SIZE * c;
     int y = constants::CELL_SIZE * r;
 
@@ -32,7 +32,7 @@ void Manager::drawCell(int r, int c, bool on) {
                      on ? TFT_WHITE : TFT_BLACK);
 }
 
-int Manager::countNeighbors(int r, int c) {
+int GameOfLife::countNeighbors(int r, int c) {
     int count = 0;
 
     for (int dr = -1; dr <= 1; dr++) {
@@ -51,7 +51,7 @@ int Manager::countNeighbors(int r, int c) {
     return count;
 }
 
-void Manager::updateGrid() {
+void GameOfLife::updateGrid() {
     bool newGrid[constants::ROWS][constants::COLS]{};
 
     for (int r = 0; r < constants::ROWS; r++) {
@@ -80,7 +80,7 @@ void Manager::updateGrid() {
     }
 }
 
-void Manager::update(int frame) {
+void GameOfLife::update(int frame) {
     updateGrid();
 
     if (frame % (25 * constants::TARGET_FPS) == 0)

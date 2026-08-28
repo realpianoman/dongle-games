@@ -1,5 +1,5 @@
 #include "Display.h"
-#include "Manager.h"
+#include "GameOfLife.h"
 #include "constants.h"
 #include <Arduino.h>
 
@@ -8,7 +8,7 @@ uint32_t fpsTimer = 0;
 uint32_t frameCount = 0;
 int frame = 0;
 
-Manager manager = Manager();
+GameOfLife gol = GameOfLife();
 
 void setup() {
     Serial.begin(115200);
@@ -17,7 +17,7 @@ void setup() {
     lastFrame = millis();
     fpsTimer = millis();
 
-    manager.setup();
+    gol.setup();
 }
 
 void loop() {
@@ -29,7 +29,7 @@ void loop() {
     frame++;
 
     if (frame > constants::TARGET_FPS)
-        manager.update(frame - constants::TARGET_FPS);
+        gol.update(frame - constants::TARGET_FPS);
 
     frameCount++;
 
