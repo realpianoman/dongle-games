@@ -23,6 +23,15 @@ void Display::fillRect(int x, int y, int w, int h, uint16_t color) {
     tft.fillRect(x, y, w, h, color);
 }
 
+void Display::pushImage(int16_t x, int16_t y, int16_t w, int16_t h,
+                        const uint16_t *image) {
+    for (int16_t row = 0; row < h; row++) {
+        for (int16_t col = 0; col < w; col++) {
+            tft.drawPixel(x + col, y + row, image[row * w + col]);
+        }
+    }
+}
+
 void Display::pixel(int x, int y, uint16_t color) {
-    drawRect(x, y, 1, 1, color);
+    tft.drawPixel(x, y, color);
 }

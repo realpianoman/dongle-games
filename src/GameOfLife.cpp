@@ -11,8 +11,6 @@ void GameOfLife::setup() {
 
     display.fillScreen(TFT_BLACK);
     reset();
-
-    delay(1000);
 }
 
 void GameOfLife::reset() {
