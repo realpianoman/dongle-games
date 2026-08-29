@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Display.h"
 #include "Game.h"
 #include "constants.h"
@@ -15,27 +16,44 @@ class SnakeGame : public Game {
     void update(int frame) override;
 
   private:
-    enum class Cell { Empty, Food, Up, Down, Left, Right };
+    enum class Cell { Empty, Food };
 
-    const static int CELL_SIZE = 10;
+    enum class Direction { Up, Down, Left, Right };
 
-    const static int ROWS = 8;
-    const static int COLS = 16;
+    static const int CELL_SIZE = 10;
+
+    static const int ROWS = 8;
+    static const int COLS = 16;
+    static const int MAX_SNAKE_LENGTH = ROWS * COLS;
 
     Cell grid[ROWS][COLS]{};
 
-    Point head;
-    Point tail;
+    Point body[MAX_SNAKE_LENGTH]{};
 
-    Point nextPos(Point pos);
-    void drawCell(Point pos);
-    bool isOppositeDir(Cell d1, Cell d2);
-    Cell nextDir();
-    Cell dir;
+    int length = 0;
 
-    Point nextFoodPos();
-    void generateFood();
+    Point head{};
+    Point tail{};
+
+    Direction dir = Direction::Right;
 
     bool running = true;
     bool init = true;
+
+    bool inBounds(int r, int c);
+
+    bool samePoint(Point a, Point b);
+
+    bool snakeContains(Point p);
+    bool snakeContains(Point p, bool ignoreTail);
+
+    Point bfsNext();
+
+    Point movePoint(Point p, Direction direction);
+
+    void drawCell(Point pos);
+    void eraseCell(Point pos);
+
+    Point nextFoodPos();
+    void generateFood();
 };

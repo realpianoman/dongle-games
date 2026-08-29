@@ -1,15 +1,18 @@
+// Highkey slopped, I had working snake but I'm lazy for the automation
+
 #include "SnakeGame.h"
 #include "Arduino.h"
 #include "Display.h"
 #include "constants.h"
 
-uint32_t SnakeGame::getTargetFPS() { return 2; }
+uint32_t SnakeGame::getTargetFPS() { return 6; }
 
 void SnakeGame::setup() {
-    if (init)
+    if (init) {
         display.setup();
+        init = false;
+    }
 
-    init = false;
     running = true;
 
     display.fillScreen(TFT_BLACK);
@@ -20,147 +23,302 @@ void SnakeGame::setup() {
         }
     }
 
-    head.r = ROWS / 2;
-    head.c = 2;
+    length = 3;
 
-    tail.r = head.r;
-    tail.c = head.c;
+    int startRow = ROWS / 2;
+    int startCol = 4;
 
-    grid[head.r][head.c] = Cell::Right;
-    dir = Cell::Right;
+    body[0] = {startRow, startCol};
+    body[1] = {startRow, startCol - 1};
+    body[2] = {startRow, startCol - 2};
+
+    head = body[0];
+    tail = body[length - 1];
+
+    dir = Direction::Right;
+
+    for (int i = 0; i < length; i++) {
+        drawCell(body[i]);
+    }
 
     generateFood();
 }
 
-Point SnakeGame::nextPos(Point pos) {
-    Point next;
-
-    next.r = pos.r;
-    next.c = pos.c;
-
-    switch (grid[pos.r][pos.c]) {
-    case Cell::Up:
-        next.r--;
-        break;
-    case Cell::Down:
-        next.r++;
-        break;
-    case Cell::Left:
-        next.c--;
-        break;
-    case Cell::Right:
-        next.c++;
-        break;
-    default:
-        break;
-    }
-
-    if (next.r < 0 || next.c < 0 || next.r >= ROWS || next.c >= COLS) {
-        // OOB
-        next.r = -1;
-        next.c = -1;
-    }
-
-    return next;
+bool SnakeGame::inBounds(int r, int c) {
+    return r >= 0 && r < ROWS && c >= 0 && c < COLS;
 }
 
-void SnakeGame::drawCell(Point pos) {
-    int x = CELL_SIZE * pos.c;
-    int y = CELL_SIZE * pos.r;
+bool SnakeGame::samePoint(Point a, Point b) { return a.r == b.r && a.c == b.c; }
 
-    Cell cell = grid[pos.r][pos.c];
+bool SnakeGame::snakeContains(Point p) { return snakeContains(p, false); }
 
-    uint16_t color = TFT_BLACK;
-    if (cell == Cell::Empty)
-        color = TFT_BLACK;
-    else if (cell == Cell::Food)
-        color = TFT_RED;
-    else
-        color = TFT_GREEN;
+bool SnakeGame::snakeContains(Point p, bool ignoreTail) {
+    int count = length;
 
-    display.fillRect(x, y, CELL_SIZE, CELL_SIZE, color);
-}
+    if (ignoreTail && count > 0) {
+        count--;
+    }
 
-bool SnakeGame::isOppositeDir(Cell d1, Cell d2) {
-    if (d1 == Cell::Up && d2 == Cell::Down)
-        return true;
-    if (d1 == Cell::Left && d2 == Cell::Right)
-        return true;
+    for (int i = 0; i < count; i++) {
+        if (samePoint(body[i], p)) {
+            return true;
+        }
+    }
 
     return false;
 }
 
-SnakeGame::Cell SnakeGame::nextDir() {
-    Cell options[] = {Cell::Up, Cell::Down, Cell::Right, Cell::Left};
+Point SnakeGame::movePoint(Point p, Direction direction) {
+    Point result = p;
 
-    Cell newDir = options[random(4)];
-    if (isOppositeDir(dir, newDir) || isOppositeDir(newDir, dir)) {
-        newDir = nextDir();
+    switch (direction) {
+    case Direction::Up:
+        result.r--;
+        break;
+
+    case Direction::Down:
+        result.r++;
+        break;
+
+    case Direction::Left:
+        result.c--;
+        break;
+
+    case Direction::Right:
+        result.c++;
+        break;
     }
 
-    return newDir;
+    return result;
+}
+
+Point SnakeGame::bfsNext() {
+    bool visited[ROWS][COLS] = {};
+    Point parent[ROWS][COLS];
+
+    Point queue[MAX_SNAKE_LENGTH];
+
+    int front = 0;
+    int back = 0;
+
+    queue[back++] = head;
+    visited[head.r][head.c] = true;
+
+    Direction directions[4];
+
+    switch (dir) {
+    case Direction::Up:
+        directions[0] = Direction::Up;
+        directions[1] = Direction::Right;
+        directions[2] = Direction::Left;
+        directions[3] = Direction::Down;
+        break;
+
+    case Direction::Down:
+        directions[0] = Direction::Down;
+        directions[1] = Direction::Right;
+        directions[2] = Direction::Left;
+        directions[3] = Direction::Up;
+        break;
+
+    case Direction::Left:
+        directions[0] = Direction::Left;
+        directions[1] = Direction::Up;
+        directions[2] = Direction::Down;
+        directions[3] = Direction::Right;
+        break;
+
+    case Direction::Right:
+        directions[0] = Direction::Right;
+        directions[1] = Direction::Down;
+        directions[2] = Direction::Up;
+        directions[3] = Direction::Left;
+        break;
+    }
+
+    while (front < back) {
+        Point current = queue[front++];
+
+        if (grid[current.r][current.c] == Cell::Food) {
+            Point path = current;
+            while (!samePoint(parent[path.r][path.c], head)) {
+                path = parent[path.r][path.c];
+            }
+
+            return path;
+        }
+
+        for (int d = 0; d < 4; d++) {
+            Point next = movePoint(current, directions[d]);
+
+            if (!inBounds(next.r, next.c)) {
+                continue;
+            }
+
+            if (visited[next.r][next.c]) {
+                continue;
+            }
+
+            if (grid[next.r][next.c] == Cell::Food) {
+                visited[next.r][next.c] = true;
+                parent[next.r][next.c] = current;
+                queue[back++] = next;
+                continue;
+            }
+
+            if (grid[next.r][next.c] == Cell::Empty) {
+                if (samePoint(next, tail)) {
+                    visited[next.r][next.c] = true;
+                    parent[next.r][next.c] = current;
+                    queue[back++] = next;
+                    continue;
+                }
+
+                if (snakeContains(next)) {
+                    continue;
+                }
+
+                visited[next.r][next.c] = true;
+                parent[next.r][next.c] = current;
+                queue[back++] = next;
+            }
+        }
+    }
+
+    return head;
+}
+
+void SnakeGame::drawCell(Point pos) {
+    if (!inBounds(pos.r, pos.c)) {
+        return;
+    }
+
+    int x = CELL_SIZE * pos.c;
+    int y = CELL_SIZE * pos.r;
+
+    uint16_t color = TFT_BLACK;
+
+    if (grid[pos.r][pos.c] == Cell::Food) {
+        color = TFT_RED;
+    } else if (snakeContains(pos)) {
+        color = TFT_GREEN;
+    }
+
+    display.fillRect(x, y, CELL_SIZE, CELL_SIZE, color);
+}
+
+void SnakeGame::eraseCell(Point pos) {
+    if (!inBounds(pos.r, pos.c)) {
+        return;
+    }
+
+    int x = CELL_SIZE * pos.c;
+    int y = CELL_SIZE * pos.r;
+
+    display.fillRect(x, y, CELL_SIZE, CELL_SIZE, TFT_BLACK);
 }
 
 Point SnakeGame::nextFoodPos() {
-    int r = random(ROWS);
-    int c = random(COLS);
+    Point available[MAX_SNAKE_LENGTH];
 
-    if (grid[r][c] != Cell::Empty)
-        return nextFoodPos();
+    int count = 0;
 
-    Point out;
-    out.r = r;
-    out.c = c;
-    return out;
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
+            Point p = {r, c};
+
+            if (grid[r][c] != Cell::Empty) {
+                continue;
+            }
+
+            if (snakeContains(p)) {
+                continue;
+            }
+
+            available[count++] = p;
+        }
+    }
+
+    if (count == 0) {
+        return {-1, -1};
+    }
+
+    return available[random(count)];
 }
 
 void SnakeGame::generateFood() {
-    Point foodPos = nextFoodPos();
+    Point food = nextFoodPos();
 
-    grid[foodPos.r][foodPos.c] = Cell::Food;
+    if (!inBounds(food.r, food.c)) {
+        running = false;
+        return;
+    }
 
-    drawCell(foodPos);
+    grid[food.r][food.c] = Cell::Food;
+
+    drawCell(food);
 }
 
 void SnakeGame::update(int frame) {
     if (!running) {
         setup();
+        return;
     }
 
-    dir = nextDir();
+    Point nextHead = bfsNext();
 
-    Point nextHead = nextPos(head);
-    if (nextHead.r == -1) {
+    if (samePoint(nextHead, head)) {
         running = false;
         return;
     }
 
-    if (grid[nextHead.r][nextHead.c] != Cell::Empty &&
-        grid[nextHead.r][nextHead.c] != Cell::Food) {
+    if (nextHead.r < head.r) {
+        dir = Direction::Up;
+    } else if (nextHead.r > head.r) {
+        dir = Direction::Down;
+    } else if (nextHead.c < head.c) {
+        dir = Direction::Left;
+    } else if (nextHead.c > head.c) {
+        dir = Direction::Right;
+    }
+
+    bool eatingFood = grid[nextHead.r][nextHead.c] == Cell::Food;
+
+    if (snakeContains(nextHead, !eatingFood)) {
         running = false;
         return;
     }
 
-    bool skipTail = false;
-    if (grid[nextHead.r][nextHead.c] == Cell::Food) {
-        skipTail = true;
+    if (!eatingFood) {
+        tail = body[length - 1];
 
-        generateFood();
+        eraseCell(tail);
     }
 
-    grid[nextHead.r][nextHead.c] = dir;
-    head.r = nextHead.r;
-    head.c = nextHead.c;
+    int newLength = eatingFood ? length + 1 : length;
 
-    if (!skipTail) {
-        Point nextTail = nextPos(tail);
-        grid[tail.r][tail.c] = Cell::Empty;
+    if (newLength > MAX_SNAKE_LENGTH) {
+        newLength = MAX_SNAKE_LENGTH;
+    }
 
-        drawCell(tail);
+    for (int i = newLength - 1; i > 0; i--) {
+        body[i] = body[i - 1];
+    }
 
-        tail.r = nextTail.r;
-        tail.c = nextTail.c;
+    body[0] = nextHead;
+
+    length = newLength;
+
+    head = body[0];
+    tail = body[length - 1];
+
+    if (eatingFood) {
+        grid[nextHead.r][nextHead.c] = Cell::Empty;
     }
 
     drawCell(head);
+
+    if (eatingFood) {
+        generateFood();
+    }
 }
