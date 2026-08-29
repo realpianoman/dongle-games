@@ -5,6 +5,9 @@
 #include "Display.h"
 #include "constants.h"
 #include <Arduino.h>
+#include <Preferences.h>
+
+Preferences preferences;
 
 uint32_t lastFrame = 0;
 uint32_t fpsTimer = 0;
@@ -14,14 +17,36 @@ int frame = 0;
 GameOfLife gol;
 SnakeGame snakeGame;
 Zephyr zephyr;
-Game *currentGame = &snakeGame;
+
+Game *currentGame = nullptr;
 
 uint32_t TARGET_FPS;
 uint32_t TARGET_FRAME_TIME;
 
+// Slop function, I need to look into esp32 preferences, this is temp
+void chooseNextGame() {
+    preferences.begin("games", false);
+
+    int gameIndex = preferences.getInt("game", 0);
+
+    if (gameIndex == 0) {
+        currentGame = &snakeGame;
+    } else if (gameIndex == 1) {
+        currentGame = &gol;
+    } else {
+        currentGame = &zephyr;
+    }
+
+    preferences.putInt("game", (gameIndex + 1) % 3);
+
+    preferences.end();
+}
+
 void setup() {
     Serial.begin(115200);
     delay(250);
+
+    chooseNextGame();
 
     TARGET_FPS = currentGame->getTargetFPS();
     TARGET_FRAME_TIME = 1000 / TARGET_FPS;
