@@ -1,10 +1,9 @@
 #include "GameOfLife.h"
 #include "Arduino.h"
 #include "Display.h"
-#include "TFT_eSPI.h"
 #include "constants.h"
 
-GameOfLife::GameOfLife() {}
+uint32_t GameOfLife::getTargetFPS() { return 12; }
 
 void GameOfLife::setup() {
     display.setup();
@@ -14,20 +13,23 @@ void GameOfLife::setup() {
 }
 
 void GameOfLife::reset() {
-    for (int r = 0; r < constants::ROWS; r++) {
-        for (int c = 0; c < constants::COLS; c++) {
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
             grid[r][c] = random(5) == 0;
             drawCell(r, c, grid[r][c]);
         }
     }
 }
 
-void GameOfLife::drawCell(int r, int c, bool on) {
-    int x = constants::CELL_SIZE * c;
-    int y = constants::CELL_SIZE * r;
+uint16_t GameOfLife::cellColor(int r, int c) {
+    return grid[r][c] ? TFT_WHITE : TFT_BLACK;
+}
 
-    display.fillRect(x, y, constants::CELL_SIZE, constants::CELL_SIZE,
-                     on ? TFT_WHITE : TFT_BLACK);
+void GameOfLife::drawCell(int r, int c, bool on) {
+    int x = CELL_SIZE * c;
+    int y = CELL_SIZE * r;
+
+    display.fillRect(x, y, CELL_SIZE, CELL_SIZE, cellColor(r, c));
 }
 
 int GameOfLife::countNeighbors(int r, int c) {
@@ -38,8 +40,8 @@ int GameOfLife::countNeighbors(int r, int c) {
             if (dr == 0 && dc == 0)
                 continue;
 
-            int nr = (r + dr + constants::ROWS) % constants::ROWS;
-            int nc = (c + dc + constants::COLS) % constants::COLS;
+            int nr = (r + dr + ROWS) % ROWS;
+            int nc = (c + dc + COLS) % COLS;
 
             if (grid[nr][nc])
                 count++;
@@ -50,10 +52,10 @@ int GameOfLife::countNeighbors(int r, int c) {
 }
 
 void GameOfLife::updateGrid() {
-    bool newGrid[constants::ROWS][constants::COLS]{};
+    bool newGrid[ROWS][COLS]{};
 
-    for (int r = 0; r < constants::ROWS; r++) {
-        for (int c = 0; c < constants::COLS; c++) {
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
             int neighbors = countNeighbors(r, c);
 
             newGrid[r][c] = grid[r][c];
@@ -67,8 +69,8 @@ void GameOfLife::updateGrid() {
         }
     }
 
-    for (int r = 0; r < constants::ROWS; r++) {
-        for (int c = 0; c < constants::COLS; c++) {
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
             if (grid[r][c] != newGrid[r][c]) {
                 grid[r][c] = newGrid[r][c];
 
@@ -81,6 +83,6 @@ void GameOfLife::updateGrid() {
 void GameOfLife::update(int frame) {
     updateGrid();
 
-    if (frame % (25 * constants::TARGET_FPS) == 0)
+    if (frame % (25 * getTargetFPS()) == 0)
         reset();
 }

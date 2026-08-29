@@ -1,6 +1,7 @@
+#include "./Games/Game.h"
+#include "./Games/GameOfLife.h"
+#include "./Games/Zephyr.h"
 #include "Display.h"
-#include "GameOfLife.h"
-#include "Zephyr.h"
 #include "constants.h"
 #include <Arduino.h>
 
@@ -9,39 +10,35 @@ uint32_t fpsTimer = 0;
 uint32_t frameCount = 0;
 int frame = 0;
 
-int active = 0;
+GameOfLife gol;
+Zephyr zephyr;
+Game *currentGame = &gol;
 
-GameOfLife gol = GameOfLife();
-Zephyr zephyr = Zephyr();
+uint32_t TARGET_FPS;
+uint32_t TARGET_FRAME_TIME;
 
 void setup() {
     Serial.begin(115200);
     delay(250);
 
+    TARGET_FPS = currentGame->getTargetFPS();
+    TARGET_FRAME_TIME = 1000 / TARGET_FPS;
+
     lastFrame = millis();
     fpsTimer = millis();
 
-    bool zeph = random(5) == 0;
-    if (zeph)
-        active = 1;
-
-    if (active == 0)
-        gol.setup();
-    if (active == 1)
-        zephyr.setup();
+    currentGame->setup();
 }
 
 void loop() {
     uint32_t now = millis();
 
-    if (now - lastFrame < constants::TARGET_FRAME_TIME)
+    if (now - lastFrame < TARGET_FRAME_TIME)
         return;
-    lastFrame += constants::TARGET_FRAME_TIME;
+    lastFrame += TARGET_FRAME_TIME;
     frame++;
 
-    if (frame > constants::TARGET_FPS)
-        if (active == 0)
-            gol.update(frame - constants::TARGET_FPS);
+    currentGame->update(frame);
 
     frameCount++;
 
