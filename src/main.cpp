@@ -1,5 +1,6 @@
 #include "./Games/Game.h"
 #include "./Games/GameOfLife.h"
+#include "./Games/SnakeGame.h"
 #include "./Games/Zephyr.h"
 #include "Display.h"
 #include "constants.h"
@@ -11,8 +12,9 @@ uint32_t frameCount = 0;
 int frame = 0;
 
 GameOfLife gol;
+SnakeGame snakeGame;
 Zephyr zephyr;
-Game *currentGame = &gol;
+Game *currentGame = &snakeGame;
 
 uint32_t TARGET_FPS;
 uint32_t TARGET_FRAME_TIME;

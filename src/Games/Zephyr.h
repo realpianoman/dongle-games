@@ -8,7 +8,4 @@ class Zephyr : public Game {
     uint32_t getTargetFPS() override;
     void setup() override;
     void update(int frame) override;
-
-  private:
-    Display display = Display();
 };
