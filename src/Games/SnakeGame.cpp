@@ -29,11 +29,7 @@ void SnakeGame::setup() {
     grid[head.r][head.c] = Cell::Right;
     dir = Cell::Right;
 
-    Point foodPos;
-    foodPos.r = head.r;
-    foodPos.c = head.c + 4;
-    grid[foodPos.r][foodPos.c] = Cell::Food;
-    drawCell(foodPos);
+    generateFood();
 }
 
 Point SnakeGame::nextPos(Point pos) {
@@ -105,6 +101,27 @@ SnakeGame::Cell SnakeGame::nextDir() {
     return newDir;
 }
 
+Point SnakeGame::nextFoodPos() {
+    int r = random(ROWS);
+    int c = random(COLS);
+
+    if (grid[r][c] != Cell::Empty)
+        return nextFoodPos();
+
+    Point out;
+    out.r = r;
+    out.c = c;
+    return out;
+}
+
+void SnakeGame::generateFood() {
+    Point foodPos = nextFoodPos();
+
+    grid[foodPos.r][foodPos.c] = Cell::Food;
+
+    drawCell(foodPos);
+}
+
 void SnakeGame::update(int frame) {
     if (!running) {
         setup();
@@ -118,9 +135,17 @@ void SnakeGame::update(int frame) {
         return;
     }
 
+    if (grid[nextHead.r][nextHead.c] != Cell::Empty &&
+        grid[nextHead.r][nextHead.c] != Cell::Food) {
+        running = false;
+        return;
+    }
+
     bool skipTail = false;
     if (grid[nextHead.r][nextHead.c] == Cell::Food) {
         skipTail = true;
+
+        generateFood();
     }
 
     grid[nextHead.r][nextHead.c] = dir;

@@ -33,6 +33,9 @@ class SnakeGame : public Game {
     Cell nextDir();
     Cell dir;
 
+    Point nextFoodPos();
+    void generateFood();
+
     bool running = true;
     bool init = true;
 };
