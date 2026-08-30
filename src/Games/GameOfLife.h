@@ -14,6 +14,7 @@ class GameOfLife : public Game {
 
     void drawCell(int r, int c, bool on);
     uint16_t cellColor(int r, int c);
+    uint16_t colorGradient(uint16_t c1, uint16_t c2, uint8_t amt);
     bool getCell(int r, int c);
     int countNeighbors(int r, int c);
     void updateGrid();

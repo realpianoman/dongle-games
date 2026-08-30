@@ -21,8 +21,26 @@ void GameOfLife::reset() {
     }
 }
 
+uint16_t GameOfLife::colorGradient(uint16_t c1, uint16_t c2, uint8_t amt) {
+    uint8_t r1 = (c1 >> 11) & 0x1F;
+    uint8_t g1 = (c1 >> 5) & 0x3F;
+    uint8_t b1 = c1 & 0x1F;
+
+    uint8_t r2 = (c2 >> 11) & 0x1F;
+    uint8_t g2 = (c2 >> 5) & 0x3F;
+    uint8_t b2 = c2 & 0x1F;
+
+    uint8_t r = r1 + ((r2 - r1) * amt) / 255;
+    uint8_t g = g1 + ((g2 - g1) * amt) / 255;
+    uint8_t b = b1 + ((b2 - b1) * amt) / 255;
+
+    return (r << 11) | (g << 5) | b;
+}
+
 uint16_t GameOfLife::cellColor(int r, int c) {
-    return grid[r][c] ? TFT_WHITE : TFT_BLACK;
+    return grid[r][c] ? colorGradient(TFT_BLUE, TFT_RED,
+                                      255 * (countNeighbors(r, c) / 4.0))
+                      : TFT_BLACK;
 }
 
 void GameOfLife::drawCell(int r, int c, bool on) {
@@ -71,11 +89,11 @@ void GameOfLife::updateGrid() {
 
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {
-            if (grid[r][c] != newGrid[r][c]) {
-                grid[r][c] = newGrid[r][c];
+            // if (grid[r][c] != newGrid[r][c]) {
+            grid[r][c] = newGrid[r][c];
 
-                drawCell(r, c, grid[r][c]);
-            }
+            drawCell(r, c, grid[r][c]);
+            // }
         }
     }
 }
