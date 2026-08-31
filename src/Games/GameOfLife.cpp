@@ -38,7 +38,7 @@ uint16_t GameOfLife::colorGradient(uint16_t c1, uint16_t c2, uint8_t amt) {
 }
 
 uint16_t GameOfLife::cellColor(int r, int c) {
-    return grid[r][c] ? colorGradient(TFT_BLUE, TFT_RED,
+    return grid[r][c] ? colorGradient(TFT_BLUE, TFT_MAGENTA,
                                       255 * (countNeighbors(r, c) / 4.0))
                       : TFT_BLACK;
 }
